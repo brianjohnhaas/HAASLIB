@@ -1,0 +1,50 @@
+<!ELEMENT ASSEMBLY_EVIDENCE (EVIDENCE_TYPE)>
+
+<!ELEMENT EVIDENCE_TYPE (SEQUENCE_DB_MATCH,  COMPUT_PREDICTION)>
+
+<!ELEMENT SEQUENCE_DB_MATCH (PROTEIN_DB_MATCH, NUCLEOTIDE_DB_MATCH)>
+
+<!ELEMENT PROTEIN_DB_MATCH (SEARCH_DB)>
+
+<!ELEMENT NUCLEOTIDE_DB_MATCH (SEARCH_DB)>
+
+<!ELEMENT SEARCH_DB (SEQ_ELEMENT*)>
+<!ATTLIST SEARCH_DB  DB_NAME CDATA  #REQUIRED>
+
+
+<!ELEMENT COMPUT_PREDICTION (GENE_PREDICTION, SPLICE_SITE_PREDICTION)>
+
+<!ELEMENT GENE_PREDICTION (SEQ_ELEMENT*)>
+
+<!ELEMENT SPLICE_SITE_PREDICTION (SEQ_ELEMENT*)>
+
+
+
+
+<!-- 
+     SEQ_ELEMENT(s) represent features that provide evidence for the existing annotation and can include gene predictions,
+     splice site predictions, or database matches.  Each match segment or predicted exon is considered an individual
+     sequence element and has a pair of coordinates referential to the parent nucleotide assembly (ASMBL_COORDS)
+     or to the element itself (MATCH_COORDS).
+-->
+     
+
+<!ELEMENT SEQ_ELEMENT (ASMBL_COORDS, MATCH_COORDS?)>
+<!ATTLIST SEQ_ELEMENT  ACCESSION      NMTOKEN    #REQUIRED>
+<!ATTLIST SEQ_ELEMENT  DESCRIPTION    CDATA      #IMPLIED>
+<!ATTLIST SEQ_ELEMENT  METHOD         CDATA      #REQUIRED>
+<!ATTLIST SEQ_ELEMENT  PER_ID         NMTOKEN    #IMPLIED>
+<!ATTLIST SEQ_ELEMENT  SCORE          NMTOKEN    #IMPLIED>
+<!ATTLIST SEQ_ELEMENT  E_VALUE        NMTOKEN    #IMPLIED>
+<!ATTLIST SEQ_ELEMENT  ELEMENT_NUM    NMTOKEN    #IMPLIED>
+
+
+
+<!-- describe the coordinates within the ASSEMBLY (also the default behaviour for the COORDSET element)-->
+<!ELEMENT ASMBL_COORDS (COORDSET)>
+
+
+<!-- describe the coordinates within the search database sequence -->
+<!ELEMENT MATCH_COORDS (COORDSET)>
+
+

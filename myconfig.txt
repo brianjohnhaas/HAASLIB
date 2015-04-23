@@ -1,0 +1,37 @@
+# This toolkit directory
+UTILDIR=/export/CVS/users/bhaas/cdna_analysis/non-cgi
+
+# MySQL settings
+MYSQLDB=uncoupled_cdna_db
+USER=bhaas
+PASSWORD=tim1bird
+SERVER=localhost
+DBSCHEMA=/home/bhaas/CVS/users/bhaas/cdna_analysis/schema/cdna_alignment_mysqlschema
+
+# Alignment tool settings
+BLATPATH=blat
+SIM4PATH=sim4
+GENESEQERPATH=geneseqer
+GENESEQER_PREF_FILE=prmfile
+GENESEQER_ORGANISM=Arabidopsis
+
+#######################################################
+# Parameters to specify to specific scripts in pipeline
+# create a key = "script_name" + ":" + "parameter" 
+# assign a value as done above.
+
+#script validate_alignments_in_db.dbi
+validate_alignments_in_db.dbi:--MAX_INTRON_LENGTH=2000
+validate_alignments_in_db.dbi:--MIN_PERCENT_ALIGNED=90
+validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=95
+
+#script subcluster_builder.dbi
+subcluster_builder.dbi:-m=50
+
+#script cDNA_annotation_comparer.dbi
+cDNA_annotation_comparer.dbi:--MIN_PERCENT_OVERLAP=50
+cDNA_annotation_comparer.dbi:--MIN_PERCENT_PROT_CODING=40
+cDNA_annotation_comparer.dbi:--MIN_PERCENT_ISOFORM_LENGTH=70
+cDNA_annotation_comparer.dbi:--MIN_PERID_PROT_COMPARE=70
+
+
