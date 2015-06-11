@@ -37,10 +37,13 @@ sub index_GTF_gene_objs_from_GTF {
         
 
         if ($seen{$gene_id}) {
-            confess "Error, already processed gene: $gene_id";
+            confess "Error, already processed gene: $gene_id\n"
+                . " here: " . $gene_obj->toString() . "\n"
+                . " and earlier: " . $seen{$gene_id}->toString();
+            
         }
         
-        $seen{$gene_id} = 1;
+        $seen{$gene_id} = $gene_obj;
 
 
         my $seqname = $gene_obj->{asmbl_id};
@@ -72,6 +75,7 @@ sub GTF_to_gene_objs {
     my %gene_id_to_name;
 
     my %gene_id_to_seq_name;
+    my %gene_id_to_gene_name;
     
     open (my $fh, $gtf_filename) or die "Error, cannot open $gtf_filename";
     while (<$fh>) {
@@ -102,10 +106,17 @@ sub GTF_to_gene_objs {
             my $name = $1;
             $gene_id_to_name{$gene_id} = $name;
         }
+
+        my $gene_name = "";
+        if ($annot =~ /gene_name \"([^\"]+)\"/) {
+            $gene_name = $1;
+            $gene_id_to_gene_name{$gene_id} = $gene_name;
+        }
+        
         
 		# print "gene_id: $gene_id, transcrpt_id: $transcript_id, $type\n";
 
-        if ($type eq 'transcript') { next; } # capture by exon coordinates
+        if ($type eq 'transcript' || $type eq 'gene') { next; } # capture by exon coordinates
 
         
         if ($type eq 'CDS' || $type eq 'stop_codon' || $type eq 'start_codon') {
@@ -182,6 +193,9 @@ sub GTF_to_gene_objs {
                     }
                     else {
                         $gene_obj->{com_name} = $transcript_id;
+                    }
+                    if (my $gene_name = $gene_id_to_gene_name{$gene_id}) {
+                        $gene_obj->{gene_name} = $gene_name;
                     }
                     $gene_obj->{asmbl_id} = $seqname;
                     $gene_obj->{source} = $source;
