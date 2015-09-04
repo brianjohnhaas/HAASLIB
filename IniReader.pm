@@ -37,21 +37,26 @@ sub new {
     my $current_section = "";
     
     my @lines = split(/\n/, $conf_text);
-    for (@lines) {
-        print "$_\n";
-        if (/\[([^\]]+)\]/) {
+    for my $line (@lines) {
+        #print "ConfLine: $line\n";
+        if ($line =~ /^\[([^\]]+)\]/) {
             $current_section = $1;
             $current_section = &_trim_flank_ws($current_section);
             print STDERR "Got section: $current_section\n";
         }
-        elsif (/^(.*)=(.*)$/) {
+        elsif ($line =~ /^(.*)=(.*)$/) {
             my $att = $1;
             my $val = $2;
             
             $att = &_trim_flank_ws($att);
             $val = &_trim_flank_ws($val);
             $self->{section_to_att_val}->{$current_section}->{$att} = $val;
+
+            #print "ATT ($att) => VAL ($val)\n";
             
+        }
+        else {
+            #print STDERR "Ignoring conf file line: $_\n";
         }
     }
     close $fh;
