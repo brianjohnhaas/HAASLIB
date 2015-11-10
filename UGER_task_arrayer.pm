@@ -24,6 +24,11 @@ sub new {
     my $self = { logdir => $logdir,
                  resume => $resume_mode || 0,
                  bash_header => "#!/bin/bash -l\n\nset -e\n\n",
+                 queue => "short", # long|short
+                 memory => "4g", # -l m_mem_free=${memory}g
+                 threads => 1, # -pe smp 1
+
+
     };
     
     bless ($self, $packagename);
@@ -40,6 +45,39 @@ sub set_bash_header {
     
     return;
 }
+
+####
+sub set_queue {
+    my ($self, $queue_name) = @_;
+
+    $self->{queue} = $queue_name;
+    
+    return;
+}
+
+####
+sub set_memory {
+    my ($self, $memory) = @_;
+    
+    unless ($memory =~ /^\d+g$/) {
+        confess "Error, memory format must be NUMg (ie. 4g) ";
+    }
+
+    $self->{memory} = $memory;
+
+    return;
+}
+
+####
+sub set_threads {
+    my ($self, $thread_count) = @_;
+
+    $self->{threads} = $thread_count;
+
+    return;
+}
+
+
     
 ####
 sub run {
@@ -99,8 +137,15 @@ sub run {
     
     my $num_cmds = scalar(@cmds);
     # launch the process and wait for results.
-    my $qsub_cmd = "qsub -V -cwd -b y -sync y -e $logdir/qsub.err -o $logdir/qsub.out -t 1-$num_cmds $runner_script";
+    my $qsub_cmd = "qsub -V -cwd -b y -sync y "
+        . " -e $logdir/qsub.err -o $logdir/qsub.out "
+        . " -q " . $self->{queue} . " " 
+        . " -l m_mem_free=" . $self->{memory} . " "
+        . " -pe smp " . $self->{threads} . " " 
+        . " -t 1-$num_cmds $runner_script";
+    
 
+    print STDERR "CMD: $qsub_cmd\n";
     my $ret = system($qsub_cmd);
 
     ## audit successes/failures/unknowns.
