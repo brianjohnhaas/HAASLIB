@@ -97,7 +97,9 @@ sub run {
     }
 
     my $runner_script = $self->_init_runner($logdir, $cmds_dir, $retvals_dir);
-    
+
+
+    ## Examine cache from previous run
     my $cache_success_file = "$logdir/cache_SUCCESS";
     my %cache_success;
     if (-s $cache_success_file) {
@@ -111,7 +113,9 @@ sub run {
     
 
     
-    ## write command files:
+    ##################################
+    ## write individual command files:
+    
     my $counter = 0;
     my @indices_to_track;
     foreach my $cmd (@cmds) {
@@ -125,10 +129,11 @@ sub run {
         
         my $cmd_file = "$cmds_dir/$counter.cmd";
         if (! -s $cmd_file) {
+            # writing bash script for command
             open (my $ofh, ">$cmd_file") or die "Error, cannot write to $cmd_file";
             print $ofh $self->{bash_header};
             print $ofh "\n$cmd\n";
-            print $ofh "exit $?\n";
+            print $ofh "exit \$?\n";
             close $ofh;
 
             chmod(0775, $cmd_file);
@@ -182,12 +187,10 @@ sub run {
         print $ofh join("\n", @failed_cmds) . "\n";
         close $ofh;
         
-    }
-
-    if (@failed_cmds) {
         print STDERR "WARNING: some commands failed.  Status = success($num_success), error($num_error), unknown($num_unknown)\n";
         
         return ($num_error + $num_unknown);
+    
     }
     else {
         print STDERR "All $num_success commands succeeed. :) \n\n";
