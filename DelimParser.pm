@@ -206,12 +206,24 @@ sub write_row {
     
     my @column_headers = $self->get_column_headers();
         
+    
+    my $delim = $self->get_delim();
+
     my @out_fields;
     for my $column_header (@column_headers) {
         my $field = $dict_href->{$column_header};
         unless (defined $field) {
             confess "Error, missing value for required column field: $column_header";
         }
+        if ($field =~ /$delim/) {
+            # don't allow any delimiters to contaminate the field value, otherwise it'll introduce offsets.
+            $field =~ s/$delim/ /g;
+        }
+        # also avoid newlines, which will also break the output formatting.
+        if ($field =~ /\n/) {
+            $field =~ s/\n/ /g;
+        }
+        
         push (@out_fields, $field);
     }
 
