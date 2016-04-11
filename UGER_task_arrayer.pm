@@ -27,8 +27,8 @@ sub new {
                  queue => "short", # long|short
                  memory => "4g", # -l m_mem_free=${memory}g
                  threads => 1, # -pe smp 1
-
-
+                 name => "noname",
+                 project_name => "",  # set to 'regevlab' if in regevlab
     };
     
     bless ($self, $packagename);
@@ -73,6 +73,24 @@ sub set_threads {
     my ($self, $thread_count) = @_;
 
     $self->{threads} = $thread_count;
+
+    return;
+}
+
+####
+sub set_name {
+    my ($self, $name) = @_;
+
+    $self->{name} = $name;
+    
+    return;
+}
+
+####
+sub set_project_name {
+    my ($self, $project_name) = @_;
+
+    $self->{project_name} = $project_name;
 
     return;
 }
@@ -142,7 +160,14 @@ sub run {
     
     my $num_cmds = scalar(@cmds);
     # launch the process and wait for results.
+    
+    my $project_info = "";
+    if (my $project_name = $self->{project_name}) {
+        $project_info = "-P $project_name";
+    }
+
     my $qsub_cmd = "qsub -V -cwd -b y -sync y "
+        . " -N " . $self->{name} . " $project_info" 
         . " -e $logdir/qsub.err -o $logdir/qsub.out "
         . " -q " . $self->{queue} . " " 
         . " -l m_mem_free=" . $self->{memory} . " "
