@@ -154,6 +154,11 @@ sub run {
         }
     }
 
+    
+    # reset in case reusing the pipeline obj
+    $self->{cmd_objs} = []; # reinit
+    
+
     return;
 }
 
@@ -162,6 +167,10 @@ sub _get_commands {
 
     return(@{$self->{cmd_objs}});
 }
+
+
+
+
 
 package Command;
 use strict;
