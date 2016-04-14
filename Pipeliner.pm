@@ -60,6 +60,7 @@ sub new {
     
     my $self = { 
         cmd_objs => [],
+        checkpoint_dir => undef,
     };
     
     bless ($self, $packagename);
@@ -76,11 +77,35 @@ sub add_commands {
         unless (ref($cmd) =~ /Command/) {
             confess "Error, need Command object as param";
         }
+
+        my $checkpoint_file = $cmd->get_checkpoint_file();
+        if ($checkpoint_file !~ m|^/|) {
+            if (my $checkpoint_dir = $self->get_checkpoint_dir()) {
+                $checkpoint_file = "$checkpoint_dir/$checkpoint_file";
+                $cmd->reset_checkpoint_file($checkpoint_file);
+            }
+        }
+        
+
         push (@{$self->{cmd_objs}}, $cmd);
     }
     
     return $self;
 
+}
+
+sub set_checkpoint_dir {
+    my $self = shift;
+    my ($checkpoint_dir) = @_;
+    if (! -d $checkpoint_dir) {
+        confess "Error, cannot locate checkpointdir: $checkpoint_dir";
+    }
+    $self->{checkpoint_dir} = $checkpoint_dir;
+}
+
+sub get_checkpoint_dir {
+    my $self = shift;
+    return($self->{checkpoint_dir});
 }
 
 sub run {
@@ -90,7 +115,7 @@ sub run {
         
         my $cmdstr = $cmd_obj->get_cmdstr();
         my $checkpoint_file = $cmd_obj->get_checkpoint_file();
-
+        
         if (-e $checkpoint_file) {
             print STDERR "-- Skipping CMD: $cmdstr, checkpoint exists.\n" if $VERBOSE;
         }
@@ -173,6 +198,12 @@ sub get_checkpoint_file {
     return($self->{checkpoint_file});
 }
 
+####
+sub reset_checkpoint_file {
+    my $self = shift;
+    my $checkpoint_file = shift;
 
+    $self->{checkpoint_file} = $checkpoint_file;
+}
 
 1; #EOM
