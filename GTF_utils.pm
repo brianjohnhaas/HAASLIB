@@ -75,11 +75,6 @@ sub GTF_to_gene_objs {
     my %gene_id_to_name;
 
     my %gene_id_to_seq_name;
-    my %gene_id_to_gene_name;
-
-
-    my %coding_genes;
-    
     
     open (my $fh, $gtf_filename) or die "Error, cannot open $gtf_filename";
     while (<$fh>) {
@@ -110,30 +105,21 @@ sub GTF_to_gene_objs {
             my $name = $1;
             $gene_id_to_name{$gene_id} = $name;
         }
-
-        my $gene_name = "";
-        if ($annot =~ /gene_name \"([^\"]+)\"/) {
-            $gene_name = $1;
-            $gene_id_to_gene_name{$gene_id} = $gene_name;
-        }
-        
         
 		# print "gene_id: $gene_id, transcrpt_id: $transcript_id, $type\n";
 
         if ($type eq 'transcript' || $type eq 'gene') { next; } # capture by exon coordinates
-
+        if ($type =~ /^(Selenocysteine)$/) { 
+            # features to skip over for other reasons
+            next;
+        }
         
         if ($type eq 'CDS' || $type eq 'stop_codon' || $type eq 'start_codon') {
             push (@{$gene_transcript_data{$seqname}->{$gene_id}->{$transcript_id}->{CDS}}, [$end5, $end3] );
             push (@{$gene_transcript_data{$seqname}->{$gene_id}->{$transcript_id}->{mRNA}}, [$end5, $end3] );
-
-            $coding_genes{$gene_id}++;
         }
         elsif ($type eq "exon" || $type =~ /UTR/) {
             push (@{$gene_transcript_data{$seqname}->{$gene_id}->{$transcript_id}->{mRNA}}, [$end5, $end3] );
-        }
-        elsif ($type =~ /Selenocysteine/) {
-            # no op
         }
         else {
             ## assuming noncoding feature
@@ -147,6 +133,7 @@ sub GTF_to_gene_objs {
     ## create gene objects.
  
     my @top_gene_objs;
+
 
     my %seen;
     foreach my $seqname (keys %gene_transcript_data) {
@@ -202,9 +189,6 @@ sub GTF_to_gene_objs {
                     else {
                         $gene_obj->{com_name} = $transcript_id;
                     }
-                    if (my $gene_name = $gene_id_to_gene_name{$gene_id}) {
-                        $gene_obj->{gene_name} = $gene_name;
-                    }
                     $gene_obj->{asmbl_id} = $seqname;
                     $gene_obj->{source} = $source;
                     
@@ -244,11 +228,6 @@ sub GTF_to_gene_objs {
                     
                     my $gene_ids_href = $ncgene_types_href->{$nc_type};
                     foreach my $gene_id (keys %$gene_ids_href) {
-
-                        if (exists $coding_genes{$gene_id}) {
-                            print STDERR "Warning: Skipping $gene_id ($nc_type) as this gene is already included as a coding gene.\n";
-                            next;
-                        }
 
                         my $trans_ids_href = $gene_ids_href->{$gene_id};
                         foreach my $trans_id (keys %$trans_ids_href) {
