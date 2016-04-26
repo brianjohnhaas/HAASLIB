@@ -108,6 +108,16 @@ sub get_checkpoint_dir {
     return($self->{checkpoint_dir});
 }
 
+sub has_commands {
+    my $self = shift;
+    if ($self->_get_commands()) {
+        return(1);
+    }
+    else {
+        return(0);
+    }
+}
+
 sub run {
     my $self = shift;
 
