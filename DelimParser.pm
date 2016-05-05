@@ -153,15 +153,18 @@ push (@ISA, 'DelimParser');
 
 sub new {
     my ($packagename) = shift;
-    my ($ofh, $delim, $column_fields_aref) = @_;
+    my ($ofh, $delim, $column_fields_aref, $FLAGS) = @_;
         
+    ## FLAGS can be:
+    #  NO_WRITE_HEADER|...
+
     unless (ref $column_fields_aref eq 'ARRAY') {
         confess "Error, need constructor params: ofh, delim, column_fields_aref";
     }
     
     my $self = $packagename->DelimParser::new($ofh, $delim);
  
-    $self->_initialize($column_fields_aref);
+    $self->_initialize($column_fields_aref, $FLAGS);
     
     return($self);
 }
@@ -171,6 +174,7 @@ sub new {
 sub _initialize {
     my $self = shift;
     my $column_fields_aref = shift;
+    my $FLAGS = shift;
     
     unless (ref $column_fields_aref eq 'ARRAY') {
         confess "Error, require column_fields_aref as param";
@@ -181,13 +185,14 @@ sub _initialize {
     my $delim = $self->get_delim();
 
     
-
-    $self->set_column_headers(@$column_fields_aref);
-
-    my $output_line = join($delim, @$column_fields_aref);
-    print $ofh "$output_line\n";
     
-        
+    $self->set_column_headers(@$column_fields_aref);
+    
+    unless ($FLAGS =~ /NO_WRITE_HEADER/) {
+        my $output_line = join($delim, @$column_fields_aref);
+        print $ofh "$output_line\n";
+    }
+    
     
     return;
 }
