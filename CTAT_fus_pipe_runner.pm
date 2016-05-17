@@ -43,10 +43,15 @@ sub run_fusion_pipe {
     my $cmd = "/home/unix/bhaas/GITHUB/CTAT_FUSIONS/STAR-Fusion/STAR-Fusion --left_fq $left_fq --right_fq $right_fq -O STAR-Fusion --genome_lib_dir $CTAT_GENOME_LIB";
     $pipeliner->add_commands( new Command($cmd, "star-fusion.ok"));
             
+    $pipeliner->add_commands( new Command("gzip -c STAR-Fusion/Chimeric.out.junction > STAR-Fusion/Chimeric.out.junction.gz", "gzip_chimeric_out.ok"));
+    $pipeliner->add_commands( new Command("samtools view -Sb STAR-Fusion/Chimeric.out.sam > STAR-Fusion/Chimeric.out.bam", "chimeric_sam_to_bam.ok"));
+    
+
     # capture outputs:
     &append_capture_outputs_cmds($pipeliner, $capture_dir, ["STAR-Fusion/star-fusion.fusion_candidates.final", 
                                                             "STAR-Fusion/star-fusion.fusion_candidates.final.abridged.FFPM",
-                                                            #"STAR-Fusion/Chimeric.out.junction"
+                                                            "STAR-Fusion/Chimeric.out.junction.gz",
+                                                            "STAR-Fusion/Chimeric.out.bam"
                                  ] );
     
     
