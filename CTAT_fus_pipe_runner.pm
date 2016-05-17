@@ -84,14 +84,15 @@ sub run_fusion_pipe {
 
     $pipeliner->add_commands(new Command("gzip DISCASM_OI_ASM/oases_out_dir/oases.transcripts.fa", "gzip_discasm_fasta.ok"));
     
-    my $norm_left_fq = "DISCASM_OI_ASM/" . basename($left_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
-    my $norm_right_fq = "DISCASM_OI_ASM/" . basename($right_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
+    #my $norm_left_fq = "DISCASM_OI_ASM/" . basename($left_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
+    #my $norm_right_fq = "DISCASM_OI_ASM/" . basename($right_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
     
-    $pipeliner->add_commands(new Command("gzip $norm_left_fq $norm_right_fq", "gzip_norm_fq.ok"));
+    #$pipeliner->add_commands(new Command("gzip $norm_left_fq $norm_right_fq", "gzip_norm_fq.ok"));
                 
     &append_capture_outputs_cmds($pipeliner, $capture_dir, ["DISCASM_OI_ASM/oases_out_dir/oases.transcripts.fa.gz",
-                                                            "$norm_left_fq.gz",
-                                                            "$norm_right_fq.gz"] );
+                                                            #"$norm_left_fq.gz",
+                                                            #"$norm_right_fq.gz"
+                                 ] );
     
     
 
