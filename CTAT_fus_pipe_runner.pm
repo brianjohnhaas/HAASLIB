@@ -78,18 +78,21 @@ sub run_fusion_pipe {
     
     
     
-    
-    
-
      
     $cmd = "/home/unix/bhaas/GITHUB/CTAT_FUSIONS/DISCASM/DISCASM --aligned_bam STAR-Fusion/Aligned.sortedByCoord.out.bam --chimeric_junctions STAR-Fusion/Chimeric.out.junction --left_fq $left_fq --right_fq $right_fq --out_dir DISCASM_OI_ASM --denovo_assembler Oases --normalize_reads";
     $pipeliner->add_commands( new Command($cmd, "DISCASM.ok") );
 
     $pipeliner->add_commands(new Command("gzip DISCASM_OI_ASM/oases_out_dir/oases.transcripts.fa", "gzip_discasm_fasta.ok"));
     
-            
-    &append_capture_outputs_cmds($pipeliner, $capture_dir, ["DISCASM_OI_ASM/oases_out_dir/oases.transcripts.fa.gz"]);
-            
+    my $norm_left_fq = "DISCASM_OI_ASM/" . basename($left_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
+    my $norm_right_fq = "DISCASM_OI_ASM/" . basename($right_fq) . ".extracted.fq.normalized_K25_C50_pctSD200.fq";
+    
+    $pipeliner->add_commands(new Command("gzip $norm_left_fq $norm_right_fq", "gzip_norm_fq.ok"));
+                
+    &append_capture_outputs_cmds($pipeliner, $capture_dir, ["DISCASM_OI_ASM/oases_out_dir/oases.transcripts.fa.gz",
+                                                            "$norm_left_fq.gz",
+                                                            "$norm_right_fq.gz"] );
+    
     
 
     $pipeliner->run();
