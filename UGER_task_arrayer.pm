@@ -29,6 +29,8 @@ sub new {
                  threads => 1, # -pe smp 1
                  name => "noname",
                  project_name => "",  # set to 'regevlab' if in regevlab
+                 reservations => 0, # set to 1 to turn on
+                 max_concurrent => undef, # set to the max number of concurrent tasks to have executing
     };
     
     bless ($self, $packagename);
@@ -69,6 +71,17 @@ sub set_memory {
 }
 
 ####
+sub set_reservations {
+    my ($self, $reservations_flag) = @_;
+    
+    $self->{reservations} = $reservations_flag;
+    
+    return;
+}
+    
+    
+
+####
 sub set_threads {
     my ($self, $thread_count) = @_;
 
@@ -91,6 +104,15 @@ sub set_project_name {
     my ($self, $project_name) = @_;
 
     $self->{project_name} = $project_name;
+
+    return;
+}
+
+####
+sub set_max_concurrent {
+    my ($self, $max_concurrent) = @_;
+
+    $self->{max_concurrent} = $max_concurrent;
 
     return;
 }
@@ -165,16 +187,24 @@ sub run {
     if (my $project_name = $self->{project_name}) {
         $project_info = "-P $project_name";
     }
+    
+    my $reservations_setting = ($self->{reservations}) ? "-R y" : "";
 
-    my $qsub_cmd = "qsub -V -cwd -b y -sync y "
+    my $max_concurrent_text = "";
+    if (my $max_concurrent = $self->{max_concurrent}) {
+        $max_concurrent_text = " -tc $max_concurrent ";
+    }
+    
+
+    my $qsub_cmd = "qsub -V -cwd -b y -sync y $reservations_setting "
         . " -N " . $self->{name} . " $project_info" 
         . " -e $logdir/qsub.err -o $logdir/qsub.out "
         . " -q " . $self->{queue} . " " 
         . " -l m_mem_free=" . $self->{memory} . " "
         . " -pe smp " . $self->{threads} . " " 
-        . " -t 1-$num_cmds $runner_script";
+        . " -t 1-$num_cmds $max_concurrent_text $runner_script";
     
-
+    
     print STDERR "CMD: $qsub_cmd\n";
     my $ret = system($qsub_cmd);
 
@@ -272,8 +302,16 @@ if (! defined \$SGE_TASK_ID) {
         }
     }
     
-    \$ret = system(\$script_name);
+    my \$err_file = "\$script_name.err";
+    my \$out_file = "\$script_name.out";
+
+    \$ret = system("\$script_name 1>\$out_file 2>\$err_file");
     system("echo \$ret > \$retval_file");
+    
+    unless (\$ret) {
+        unlink(\$err_file);
+        unlink(\$out_file);
+    }
     
     exit(\$ret);
 
