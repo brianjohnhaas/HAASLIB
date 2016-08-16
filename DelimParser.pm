@@ -71,6 +71,7 @@ package DelimParser::Reader;
 use strict;
 use warnings;
 use Carp;
+use Data::Dumper;
 
 our @ISA;
 push (@ISA, 'DelimParser');
@@ -188,7 +189,7 @@ sub _initialize {
     
     $self->set_column_headers(@$column_fields_aref);
     
-    unless ($FLAGS =~ /NO_WRITE_HEADER/) {
+    unless ($FLAGS && $FLAGS =~ /NO_WRITE_HEADER/) {
         my $output_line = join($delim, @$column_fields_aref);
         print $ofh "$output_line\n";
     }
