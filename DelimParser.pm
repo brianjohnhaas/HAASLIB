@@ -189,7 +189,7 @@ sub _initialize {
     
     $self->set_column_headers(@$column_fields_aref);
     
-    unless ($FLAGS && $FLAGS =~ /NO_WRITE_HEADER/) {
+    unless (defined($FLAGS) && $FLAGS =~ /NO_WRITE_HEADER/) {
         my $output_line = join($delim, @$column_fields_aref);
         print $ofh "$output_line\n";
     }

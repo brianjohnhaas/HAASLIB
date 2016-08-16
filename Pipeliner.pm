@@ -57,10 +57,20 @@ sub new {
     if ($params{-verbose}) {
         $VERBOSE = $params{-verbose};
     }
+    my $cmds_log = $params{-cmds_log};
+    unless ($cmds_log) {
+        $cmds_log = "pipeliner.$$.cmds";
+    }
+    
+    open (my $ofh, ">$cmds_log") or confess "Error, cannot write to $cmds_log";
+    
     
     my $self = { 
         cmd_objs => [],
         checkpoint_dir => undef,
+
+        cmds_log_ofh => $ofh,
+        
     };
     
     bless ($self, $packagename);
@@ -121,9 +131,14 @@ sub has_commands {
 sub run {
     my $self = shift;
 
+    my $cmds_log_ofh = $self->{cmds_log_ofh};
+
     foreach my $cmd_obj ($self->_get_commands()) {
         
         my $cmdstr = $cmd_obj->get_cmdstr();
+        print $cmds_log_ofh "$cmdstr\n";
+        
+
         my $checkpoint_file = $cmd_obj->get_checkpoint_file();
         
         if (-e $checkpoint_file) {
