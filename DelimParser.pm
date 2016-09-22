@@ -71,6 +71,7 @@ package DelimParser::Reader;
 use strict;
 use warnings;
 use Carp;
+use Data::Dumper;
 
 our @ISA;
 push (@ISA, 'DelimParser');
