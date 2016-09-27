@@ -23,7 +23,7 @@ sub new {
     
     my $self = { logdir => $logdir,
                  resume => $resume_mode || 0,
-                 bash_header => "#!/bin/bash -l\n\nset -e\n\n",
+                 bash_header => "#!/bin/bash\n\nset -e\necho HOSTNAME: \$HOSTNAME\n\n",
                  queue => "short", # long|short
                  memory => "4g", # -l m_mem_free=${memory}g
                  threads => 1, # -pe smp 1
@@ -200,7 +200,8 @@ sub run {
         . " -N " . $self->{name} . " $project_info" 
         . " -e $logdir/qsub.err -o $logdir/qsub.out "
         . " -q " . $self->{queue} . " " 
-        . " -l m_mem_free=" . $self->{memory} . " "
+        . " -l h_vmem=" . $self->{memory} . " "
+        #. " -l m_mem_free=" . $self->{memory} . " "
         . " -pe smp " . $self->{threads} . " " 
         . " -t 1-$num_cmds $max_concurrent_text $runner_script";
     
