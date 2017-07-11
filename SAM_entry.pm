@@ -420,6 +420,19 @@ sub set_mate_unmapped {
 	return($self->_set_bit_val(0x0008, $bit_val));
 }
 
+sub is_duplicate {
+    my ($self) = shift;
+    
+    return($self->_get_bit_val(0x0400));
+}
+sub set_duplicate {
+    my $self = shift;
+    my $bit_val = shift;
+
+    return($self->_set_bit_val(0x0400, $bit_val));
+}
+
+
 ####
 sub get_query_strand {
 	my $self = shift;
