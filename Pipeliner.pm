@@ -151,10 +151,11 @@ sub run {
             if (-e $tmp_stderr) {
                 unlink($tmp_stderr);
             }
+
             unless ($VERBOSE == 2) {
                 $cmdstr .= " 2>$tmp_stderr";
             }
-            
+
             my $ret = system($cmdstr);
             if ($ret) {
                 
@@ -163,7 +164,7 @@ sub run {
                     unlink($tmp_stderr);
                 }
                                 
-                confess "Error, cmd: $cmdstr died with ret $ret";
+                confess "Error, cmd: $cmdstr died with ret $ret $!";
             }
             else {
                 `touch $checkpoint_file`;
