@@ -41,6 +41,7 @@ Available genetic codes include universal, Euplotes, Tetrahymena, Candida, Aceta
 For info on these codes, visit:
 
 http://golgi.harvard.edu/biolinks/gencode.html
+(https://web.archive.org/web/20040216020103/http://golgi.harvard.edu/biolinks/gencode.html)
 
 Methods exported by this package include:
 
