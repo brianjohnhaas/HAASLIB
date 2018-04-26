@@ -9,7 +9,6 @@ use Cwd;
 ## Verbose levels:
 ## 1: see CMD string
 ## 2: see stderr during process
-my $VERBOSE = 0;
 ################################
 
 
@@ -53,7 +52,8 @@ sub process_cmd {
 sub new {
     my $packagename = shift;
     my %params = @_;
-    
+
+    my $VERBOSE = 0;
     if ($params{-verbose}) {
         $VERBOSE = $params{-verbose};
     }
@@ -64,7 +64,7 @@ sub new {
         cmd_objs => [],
         checkpoint_dir => undef,
         cmds_log_ofh => undef,
-        
+        VERBOSE => $VERBOSE,
     };
     
     bless ($self, $packagename);
@@ -142,7 +142,8 @@ sub has_commands {
 
 sub run {
     my $self = shift;
-
+    my $VERBOSE = $self->{VERBOSE};
+    
     my $cmds_log_ofh = $self->{cmds_log_ofh};
 
     foreach my $cmd_obj ($self->_get_commands()) {
