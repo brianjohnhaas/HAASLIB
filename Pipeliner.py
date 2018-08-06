@@ -42,6 +42,12 @@ class Pipeliner(object):
     def add_commands(self, cmds_list):
 
         for cmd in cmds_list:
+            # check it's a proper Command object
+            if not isinstance(cmd, Command):
+                errmsg = "Pipeliner::add_commmands - Error, cmd {} is not a Command object".format(cmd)
+                logger.critical(errmsg)
+                raise(errmsg)
+            
             self._cmds_list.append(cmd)
 
     
