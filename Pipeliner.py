@@ -8,8 +8,11 @@ import os, sys
 import logging
 import subprocess
 import shlex
+import shutil
+import time
 
 logger = logging.getLogger(__name__)
+
 
 def run_cmd(cmd, ignore_error=False):
 
@@ -86,3 +89,22 @@ class Command(object):
     def get_ignore_error_setting(self):
         return self._ignore_error
  
+
+
+
+if __name__ == '__main__':
+
+    checkpoint_dir = "/tmp/checkpoints_dir." + str(time.time())
+    
+    pipeliner = Pipeliner(checkpoint_dir)
+
+    pipeliner.add_commands([Command("echo hello!", "hello.ok")])
+
+    pipeliner.add_commands([Command("echo done testing pipeliner", "test.ok")])
+    
+    pipeliner.run()
+
+    shutil.rmtree(checkpoint_dir)
+
+    sys.exit(0)
+    
