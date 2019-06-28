@@ -11,6 +11,7 @@ import shlex
 import shutil
 import time
 from inspect import getframeinfo, stack
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +51,10 @@ class Pipeliner(object):
 
         for cmd in cmds_list:
             # check it's a proper Command object
-            if not isinstance(cmd, Command):
-                errmsg = "Pipeliner::add_commmands - Error, cmd {} is not a Command object".format(cmd)
+            if not (isinstance(cmd, Command) or isinstance(cmd, ParallelCommandList) ):
+                errmsg = "Pipeliner::add_commmands - Error, cmd {} is not a Command or ParallelCommandList object".format(cmd)
                 logger.critical(errmsg)
-                raise(errmsg)
+                raise(RuntimeError(errmsg))
             
             self._cmds_list.append(cmd)
 
@@ -138,6 +139,81 @@ class Command(object):
         return
 
 
+#############################
+## Parallel command execution
+#############################
+
+
+class ParallelCommandThread(threading.Thread):
+
+    def __init__(self, cmdobj, checkpointdir, paraCmdListObj):
+
+        threading.Thread.__init__(self)
+
+        self._cmdobj = cmdobj
+        self._checkpointdir = checkpointdir
+        self._paraCmdListObj = paraCmdListObj
+
+
+    def run(self):
+
+        self._cmdobj.run(self._checkpointdir)
+
+        self._paraCmdListObj._num_running -= 1
+        
+
+
+
+class ParallelCommandList(object):
+
+    def __init__(self, cmdlist, checkpoint, num_threads, ignore_error=False):
+
+        self._cmdlist = cmdlist
+        self._checkpoint = checkpoint
+        self._num_threads = num_threads
+        self._ignore_error = ignore_error
+        self._num_running = 0
+
+    def run(self, checkpoint_dir):
+
+        parallel_job_checkpoint_file = self._checkpoint
+
+        full_path_parallel_job_checkpoint_file = os.path.sep.join([checkpoint_dir, parallel_job_checkpoint_file])
+        if os.path.exists(full_path_parallel_job_checkpoint_file):
+            logger.info("Parallel command series already completed, so skipping. Checkpoint found as: {}".format(full_path_parallel_job_checkpoint_file))
+            return
+        
+        ## run parallel command series, no more than _num_threads simultaneously.
+        
+        cmd_idx = 0
+        while cmd_idx < len(self._cmdlist):
+
+            if self._num_running < self._num_threads:
+                
+                cmdstr = self._cmdlist[cmd_idx]
+
+                checkpoint_file = "{}.tid-{}".format(parallel_job_checkpoint_file, cmd_idx)
+
+                cmdobj = Command(cmdstr, checkpoint_file, self._ignore_error)
+                cmdthread = ParallelCommandThread(cmdobj, checkpoint_dir, self)
+                self._num_running += 1
+                cmdthread.start() # will auto-decrement _num_threads once it completes via shared memory usage.
+                cmd_idx += 1
+
+        ## wait for the remaining ones to finish.
+        iter_counter = 0
+        while self._num_running > 0:
+            time.sleep(1) # avoid unnecessarily running at 100% CPU. Sleeping 1 second is a long enough time in the quantum realm.
+            iter_counter += 1
+            if iter_counter % 60 == 0:
+                sys.stderr.write("\r waiting for {} jobs to complete.    ".format(self._num_running))
+
+        run_cmd("touch {}".format(full_path_parallel_job_checkpoint_file))
+
+        logger.info("done running parallel command series.")
+        
+        return
+
 
 if __name__ == '__main__':
 
@@ -150,6 +226,12 @@ if __name__ == '__main__':
     pipeliner.add_commands([Command("echo hello!", "hello.ok")])
 
     pipeliner.add_commands([Command("echo done testing pipeliner", "test.ok")])
+
+    max_x = 10
+    cmdlist = [ "echo {} && sleep {}".format(x, max_x + 1 - x) for x in range(1,max_x) ]
+    num_threads = 4
+    pipeliner.add_commands([ParallelCommandList(cmdlist, "trypara.ok", num_threads)])
+    
     
     pipeliner.run()
 
