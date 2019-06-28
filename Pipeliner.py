@@ -64,29 +64,9 @@ class Pipeliner(object):
 
     def run(self):
         for cmd in self._cmds_list:
-            checkpoint_file = os.path.sep.join([self._checkpoint_dir, cmd.get_checkpoint()])
-            if os.path.exists(checkpoint_file):
-                logger.info("CMD: " + cmd.get_cmd() + " already processed. Skipping.")
-            else:
-                # execute it.  If it succeeds, make the checkpoint file
-                start_time = time.time()
-                cmdstr = cmd.get_cmd()
-                ret = run_cmd(cmdstr, True)
-                if ret:
-                    # failure occurred.
-                    errmsg = str("Error, command: [ {} ] failed, stack trace: [ {} ] ".format(cmdstr, cmd.get_stacktrace()))
-                    logger.error(errmsg)
-                    
-                    if cmd.get_ignore_error_setting() is False:
-                        raise RuntimeError(errmsg)
-                else:
-                    end_time = time.time()
-                    runtime_minutes = (end_time - start_time) / 60
-                    logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
-                
-                                
-                run_cmd("touch {}".format(checkpoint_file))
-
+            
+            checkpoint_dir = self._checkpoint_dir
+            cmd.run(checkpoint_dir)
 
         # since all commands executed successfully, remove them from the current cmds list
         self._cmds_list = list()
@@ -126,6 +106,37 @@ class Command(object):
             stacktrace += "st: file:{}, lineno:{}\n".format(caller.filename, caller.lineno)
 
         return stacktrace
+
+
+
+    def run(self, checkpoint_dir):
+
+        checkpoint_file = os.path.sep.join([checkpoint_dir, self.get_checkpoint()])
+        if os.path.exists(checkpoint_file):
+            logger.info("CMD: " + self.get_cmd() + " already processed. Skipping.")
+        else:
+            # execute it.  If it succeeds, make the checkpoint file
+            start_time = time.time()
+
+            cmdstr = self.get_cmd()
+            ret = run_cmd(cmdstr, True)
+            if ret:
+                # failure occurred.
+                errmsg = str("Error, command: [ {} ] failed, stack trace: [ {} ] ".format(cmdstr, self.get_stacktrace()))
+                logger.error(errmsg)
+
+                if cmd.get_ignore_error_setting() is False:
+                    raise RuntimeError(errmsg)
+            else:
+                end_time = time.time()
+                runtime_minutes = (end_time - start_time) / 60
+                logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
+
+
+            run_cmd("touch {}".format(checkpoint_file))
+
+        return
+
 
 
 if __name__ == '__main__':
