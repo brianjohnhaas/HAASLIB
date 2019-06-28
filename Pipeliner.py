@@ -10,6 +10,7 @@ import subprocess
 import shlex
 import shutil
 import time
+from inspect import getframeinfo, stack
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,13 @@ def run_cmd(cmd, ignore_error=False):
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
+
         if ignore_error:
-            return
+            return 1  # caller decides how to handle the error.
         else:
             raise e
+
+    return 0 # all good.
 
 
 class Pipeliner(object):
@@ -65,12 +69,30 @@ class Pipeliner(object):
                 logger.info("CMD: " + cmd.get_cmd() + " already processed. Skipping.")
             else:
                 # execute it.  If it succeeds, make the checkpoint file
-                run_cmd(cmd.get_cmd(), cmd.get_ignore_error_setting())
+                start_time = time.time()
+                cmdstr = cmd.get_cmd()
+                ret = run_cmd(cmdstr, True)
+                if ret:
+                    # failure occurred.
+                    errmsg = str("Error, command: [ {} ] failed, stack trace: [ {} ] ".format(cmdstr, cmd.get_stacktrace()))
+                    logger.error(errmsg)
+                    
+                    if cmd.get_ignore_error_setting() is False:
+                        raise RuntimeError(errmsg)
+                else:
+                    end_time = time.time()
+                    runtime_minutes = (end_time - start_time) / 60
+                    logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
+                
+                                
                 run_cmd("touch {}".format(checkpoint_file))
+
 
         # since all commands executed successfully, remove them from the current cmds list
         self._cmds_list = list()
     
+        return
+
 
 
 class Command(object):
@@ -79,6 +101,7 @@ class Command(object):
         self._cmd = cmd
         self._checkpoint = checkpoint
         self._ignore_error = ignore_error
+        self._stacktrace = self._extract_stack(stack())
 
     def get_cmd(self):
         return self._cmd
@@ -90,10 +113,25 @@ class Command(object):
         return self._ignore_error
  
 
+    def __repr__(self):
+        return self._cmd
+
+    def get_stacktrace(self):
+        return self._stacktrace
+
+    def _extract_stack(self, stack_list):
+        stacktrace = ""
+        for frame_entry in stack_list:
+            caller = getframeinfo(frame_entry[0])
+            stacktrace += "st: file:{}, lineno:{}\n".format(caller.filename, caller.lineno)
+
+        return stacktrace
 
 
 if __name__ == '__main__':
 
+    logging.basicConfig(level=logging.INFO)
+    
     checkpoint_dir = "/tmp/checkpoints_dir." + str(time.time())
     
     pipeliner = Pipeliner(checkpoint_dir)
