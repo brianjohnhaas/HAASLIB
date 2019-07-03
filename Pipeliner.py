@@ -22,9 +22,10 @@ def run_cmd(cmd, ignore_error=False):
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
+        logger.error("Error: {}, exit val: {}".format(str(e), e.returncode))
 
         if ignore_error:
-            return 1  # caller decides how to handle the error.
+            return e.returncode  # caller decides how to handle the error.
         else:
             raise e
 
@@ -113,6 +114,7 @@ class Command(object):
     def run(self, checkpoint_dir):
 
         checkpoint_file = os.path.sep.join([checkpoint_dir, self.get_checkpoint()])
+        ret = 0
         if os.path.exists(checkpoint_file):
             logger.info("CMD: " + self.get_cmd() + " already processed. Skipping.")
         else:
@@ -126,17 +128,15 @@ class Command(object):
                 errmsg = str("Error, command: [ {} ] failed, stack trace: [ {} ] ".format(cmdstr, self.get_stacktrace()))
                 logger.error(errmsg)
 
-                if cmd.get_ignore_error_setting() is False:
+                if self.get_ignore_error_setting() is False:
                     raise RuntimeError(errmsg)
             else:
                 end_time = time.time()
                 runtime_minutes = (end_time - start_time) / 60
                 logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
+                run_cmd("touch {}".format(checkpoint_file))  # only if succeeds.
 
-
-            run_cmd("touch {}".format(checkpoint_file))
-
-        return
+        return ret
 
 
 #############################
@@ -157,11 +157,13 @@ class ParallelCommandThread(threading.Thread):
 
     def run(self):
 
-        self._cmdobj.run(self._checkpointdir)
+        ret = self._cmdobj.run(self._checkpointdir)
 
+        # track job completion and capture success/failure
         self._paraCmdListObj._num_running -= 1
         
-
+        if ret != 0:
+            self._paraCmdListObj._num_errors += 1
 
 
 class ParallelCommandList(object):
@@ -173,6 +175,7 @@ class ParallelCommandList(object):
         self._num_threads = num_threads
         self._ignore_error = ignore_error
         self._num_running = 0
+        self._num_errors = 0
 
     def run(self, checkpoint_dir):
 
@@ -194,7 +197,7 @@ class ParallelCommandList(object):
 
                 checkpoint_file = "{}.tid-{}".format(parallel_job_checkpoint_file, cmd_idx)
 
-                cmdobj = Command(cmdstr, checkpoint_file, self._ignore_error)
+                cmdobj = Command(cmdstr, checkpoint_file, ignore_error=True)
                 cmdthread = ParallelCommandThread(cmdobj, checkpoint_dir, self)
                 self._num_running += 1
                 cmdthread.start() # will auto-decrement _num_threads once it completes via shared memory usage.
@@ -208,6 +211,15 @@ class ParallelCommandList(object):
             if iter_counter % 60 == 0:
                 sys.stderr.write("\r waiting for {} jobs to complete.    ".format(self._num_running))
 
+
+        if self._num_errors > 0:
+            errmsg = "Error, {} commands failed".format(self._num_errors)
+            logger.error(errmsg)
+            if not self._ignore_error:
+                raise RuntimeError(errmsg)
+        else:
+            logger.info("All parallel commands succeeded.")
+        
         run_cmd("touch {}".format(full_path_parallel_job_checkpoint_file))
 
         logger.info("done running parallel command series.")
