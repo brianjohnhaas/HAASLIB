@@ -2,6 +2,7 @@ package Fastq_reader;
 
 use strict;
 use warnings;
+use Carp;
 
 sub new {
     my ($packagename, $fastqFile) = @_;
@@ -59,8 +60,12 @@ sub next {
     
 	if ($next_text_input) {
         
-		
-		$read_obj = Fastq_record->new($next_text_input);
+		eval {
+            $read_obj = Fastq_record->new($next_text_input);
+        };
+        if ($@) {
+            confess "Error, $@ :: fastq file: " . $self->{fastqFile};
+        }
     }
         
     return ($read_obj); #returns null if not instantiated.
