@@ -65,9 +65,17 @@ class Pipeliner(object):
                 logger.info("CMD: " + cmd.get_cmd() + " already processed. Skipping.")
             else:
                 # execute it.  If it succeeds, make the checkpoint file
+                logger.info("-running CMD: " + cmd.get_cmd())
+                start_time = time.time()
                 run_cmd(cmd.get_cmd(), cmd.get_ignore_error_setting())
-                run_cmd("touch {}".format(checkpoint_file))
+                end_time = time.time()
 
+                minutes_run = "{:.2f}".format((end_time - start_time)/60.0)
+                logger.info("-exec took {} minutes.".format(minutes_run))
+                run_cmd("touch {}".format(checkpoint_file))
+                
+
+                
         # since all commands executed successfully, remove them from the current cmds list
         self._cmds_list = list()
     
