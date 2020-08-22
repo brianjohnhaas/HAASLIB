@@ -182,6 +182,8 @@ sub get_alignment_coords {
 	my @query_coords;
 
 
+    my $sum_hardmasked_query = 0;
+
 	$genome_lend--; # move pointer just before first position.
 	
 	while ($alignment =~ /(\d+)([A-Z])/g) {
@@ -217,7 +219,10 @@ sub get_alignment_coords {
                $code eq 'S' || $code eq 'H')  # masked region of query
         { 
             $query_lend += $len;
-
+            
+            if ($code eq "H") {
+                $sum_hardmasked_query += $len;
+            }
 		}
 	}
 
@@ -229,7 +234,8 @@ sub get_alignment_coords {
         unless ($read_len) {
             confess "Error, no read length obtained from entry: " . $self->get_original_line();
         }
-
+        $read_len += $sum_hardmasked_query;
+        
         my @revcomp_coords;
         foreach my $coordset (@query_coords) {
             my ($lend, $rend) = @$coordset;
