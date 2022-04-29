@@ -40,7 +40,7 @@ sub index_alignment_objs {
 		
 		my @x = split(/\t/);
 
-		unless (scalar (@x) >= 8 && $x[8] =~ /transcript_id/) {
+		unless (scalar (@x) >= 8) { 
 			print STDERR "ignoring line: $_\n";
 			next;
 		}
@@ -53,7 +53,11 @@ sub index_alignment_objs {
         
         unless ($type eq 'exon') { next; }
         
-
+        unless($x[8] =~ /transcript_id/) {
+            print STDERR "ignoring line: $_\n";
+			next;
+        }
+        
         if ($per_id eq ".") { $per_id = 100; } # making an assumption here.
         
 		my $orient = $x[6];
@@ -67,8 +71,8 @@ sub index_alignment_objs {
 			$part =~ s/\"//g;
 			my ($att, $val) = split(/\s+/, $part);
 			
-			if (exists $atts{$att}) {
-				die "Error, already defined attribute $att in $_";
+			if (exists $atts{$att} && $att ne "tag") {
+				die "Error, already defined attribute [$att] in @parts";
 			}
 			
 			$atts{$att} = $val;

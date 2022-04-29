@@ -109,17 +109,17 @@ sub get_seq {
                 print STDERR "   reached $_, stopping\n" if $DEBUG;
                 last;
             }
-            $seq .= $_;
+            my $seq_part = $_;
+            $seq_part =~ s/\s//g;
+            $seq .= $seq_part;
         }
         print STDERR "-done seeking $acc\n\n" if $DEBUG;
-    }
-    
-    $seq =~ s/\s+//g;
         
+    }    
+    
     return($seq);
 }
-    
-    
+
     
 
 1; #EOM
