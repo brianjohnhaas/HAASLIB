@@ -12,7 +12,8 @@ sub index_BED_as_gene_objs {
 
 	open (my $fh, $gff_filename) or die "Error, cannot open file $gff_filename";
 	while (<$fh>) {
-		chomp;
+		if (/^\#/) { next; }
+        chomp;
 		unless (/\w/) { next; }
 		
 		my $bed_line = $_;
