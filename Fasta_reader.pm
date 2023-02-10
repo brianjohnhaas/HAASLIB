@@ -58,7 +58,8 @@ sub next {
 	my $seqobj = undef;
     
 	if ($next_text_input) {
-		$next_text_input =~ s/^>|>$//g; #remove trailing > char.
+		$next_text_input =~ s/^>//;
+        $next_text_input =~ s/>$//; #remove trailing > char.
 		$next_text_input =~ tr/\t\n\000-\037\177-\377/\t\n/d; #remove cntrl chars
 		my ($header, @seqlines) = split (/\n/, $next_text_input);
 		my $sequence = join ("", @seqlines);
