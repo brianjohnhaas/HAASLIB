@@ -13,6 +13,8 @@ package SingleLinkageClusterer;
 
 use strict;
 
+our $JACCARD_COEFF;
+
 sub build_clusters {
     my @pairs = @_;
     my $pairfile = "$$.pairs";
@@ -46,6 +48,11 @@ sub build_clusters {
     if ($CLUSTERPATH) {
 	$cluster_prog = $CLUSTERPATH;
     }
+
+    if ($JACCARD_COEFF) {
+        $cluster_prog .= " -j $JACCARD_COEFF";
+    }
+    
     
     system "touch $clusterfile";
     unless (-w $clusterfile) { die "Can't write $clusterfile";}
