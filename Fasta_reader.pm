@@ -85,16 +85,21 @@ sub finish {
 ####
 sub retrieve_all_seqs_hash {
 	my $self = shift;
+    my %accs_restrict = @_;
+
 
 	my %acc_to_seq;
 	
 	while (my $seq_obj = $self->next()) {
 		my $acc = $seq_obj->get_accession();
 		my $sequence = $seq_obj->get_sequence();
-
-		$acc_to_seq{$acc} = $sequence;
-	}
-
+        
+        if ( (! %accs_restrict) || (%accs_restrict && exists $accs_restrict{$acc})) {
+        
+            $acc_to_seq{$acc} = $sequence;
+        }
+    }
+    
 	return(%acc_to_seq);
 }
 
