@@ -57,11 +57,12 @@ sub build_clusters {
     system "touch $clusterfile";
     unless (-w $clusterfile) { die "Can't write $clusterfile";}
     my $cmd = "$cluster_prog < $pairfile > $clusterfile";
+    print STDERR "$cmd\n";
     my $ret = system ($cmd);
     if ($ret) {
 	die "ERROR: Couldn't run cluster properly via path: $cluster_prog.\ncmd: $cmd";
     }
-
+    
     my @clusters;
     open (CLUSTERS, $clusterfile);
     
