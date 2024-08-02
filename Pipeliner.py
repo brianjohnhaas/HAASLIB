@@ -138,7 +138,8 @@ class Command(object):
                 end_time = time.time()
                 runtime_minutes = (end_time - start_time) / 60
                 logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
-                run_cmd("touch {}".format(checkpoint_file))  # only if succeeds.
+                with open(checkpoint_file, "w") as f:
+                    f.write(cmdstr + "\n")
 
         return ret
 
