@@ -53,15 +53,18 @@ class Pipeliner(object):
 
         for cmd in cmds_list:
             # check it's a proper Command object
-            if not (isinstance(cmd, Command) or isinstance(cmd, ParallelCommandList) ):
-                errmsg = "Pipeliner::add_commmands - Error, cmd {} is not a Command or ParallelCommandList object".format(cmd)
-                logger.critical(errmsg)
-                raise(RuntimeError(errmsg))
+            if (isinstance(cmd, Message)):
+                self._cmds_list.append(cmd)
+            else:
+                if not (isinstance(cmd, Command) or isinstance(cmd, ParallelCommandList)):
+                    errmsg = "Pipeliner::add_commmands - Error, cmd {} is not a Command or ParallelCommandList object".format(cmd)
+                    logger.critical(errmsg)
+                    raise(RuntimeError(errmsg))
 
-            if cmd.get_checkpoint() in self._unique_checkpoints:
-                raise ValueError('Duplicate checkpoint {}'.format(cmd.get_checkpoint()))
-            self._unique_checkpoints.add(cmd.get_checkpoint())
-            self._cmds_list.append(cmd)
+                if cmd.get_checkpoint() in self._unique_checkpoints:
+                    raise ValueError('Duplicate checkpoint {}'.format(cmd.get_checkpoint()))
+                self._unique_checkpoints.add(cmd.get_checkpoint())
+                self._cmds_list.append(cmd)
 
 
     def num_cmds(self):
@@ -142,6 +145,14 @@ class Command(object):
                     f.write(cmdstr + "\n")
 
         return ret
+
+
+class Message(object):
+    def __init__(self, message):
+        self._message = message
+
+    def run(self, checkpoint_dir):
+        logger.info(self._message)
 
 
 #############################
