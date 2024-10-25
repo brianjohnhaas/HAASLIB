@@ -13,12 +13,18 @@ import time
 from inspect import getframeinfo, stack
 import threading
 
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
 
 
 def run_cmd(cmd, ignore_error=False):
 
-    logger.info("Running: " + cmd)
+    logger.debug("Running: " + cmd)
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
@@ -46,6 +52,11 @@ class Pipeliner(object):
             os.makedirs(checkpoint_dir)
 
         self._checkpoint_dir = checkpoint_dir
+
+        fhandler = logging.FileHandler(os.path.join(self._checkpoint_dir, "pipeliner.log"))
+        fhandler.setLevel(logging.DEBUG)
+        logger.addHandler(fhandler)
+
 
 
 
@@ -123,7 +134,7 @@ class Command(object):
         checkpoint_file = os.path.sep.join([checkpoint_dir, self.get_checkpoint()])
         ret = 0
         if os.path.exists(checkpoint_file):
-            logger.info("CMD: " + self.get_cmd() + " already processed. Skipping.")
+            logger.debug("CMD: " + self.get_cmd() + " already processed. Skipping.")
         else:
             # execute it.  If it succeeds, make the checkpoint file
             start_time = time.time()
@@ -140,7 +151,7 @@ class Command(object):
             else:
                 end_time = time.time()
                 runtime_minutes = (end_time - start_time) / 60
-                logger.info("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
+                logger.debug("Execution Time = {:.2f} minutes. CMD: {}".format(runtime_minutes, cmdstr))
                 with open(checkpoint_file, "w") as f:
                     f.write(cmdstr + "\n")
 
