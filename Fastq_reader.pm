@@ -2,7 +2,6 @@ package Fastq_reader;
 
 use strict;
 use warnings;
-use Carp;
 
 sub new {
     my ($packagename, $fastqFile) = @_;
@@ -23,8 +22,7 @@ sub new {
 	}
 	else {
 		if ( $fastqFile =~ /\.gz$/ ) {
-		    ## TODO:  need to handle the failure case, since not picked up here as I thought it would!!
-            open ($filehandle, "gunzip -c $fastqFile | ") or die "Error: Couldn't open compressed $fastqFile\n";
+		    open ($filehandle, "gunzip -c $fastqFile | ") or die "Error: Couldn't open compressed $fastqFile\n";
         }
         elsif ($fastqFile =~ /\.bz2$/) {
             open ($filehandle, "bunzip2 -c $fastqFile | ") or die "Error, couldn't open compressed $fastqFile $!";
@@ -60,12 +58,8 @@ sub next {
     
 	if ($next_text_input) {
         
-		eval {
-            $read_obj = Fastq_record->new($next_text_input);
-        };
-        if ($@) {
-            confess "Error, $@ :: fastq file: " . $self->{fastqFile};
-        }
+		
+		$read_obj = Fastq_record->new($next_text_input);
     }
         
     return ($read_obj); #returns null if not instantiated.
@@ -104,14 +98,16 @@ sub new {
         confess "Error, cannot identify first line as read name line: " . $text_lines;
     }
     
-    my ($read_name, $rest) = split(/\s+/, $name_line);
-    $read_name =~ s/^\@//;
+    my ($full_read_name, $rest) = split(/\s+/, $name_line);
+    $full_read_name =~ s/^\@//;
     
     
     my $pair_dir = 0; # assume single
 
-    if ($read_name =~ /^(\S+)\/([12])$/) {
-        $read_name = $1;
+    my $core_read_name = $full_read_name;
+    
+    if ($core_read_name =~ /^(\S+)\/([12])$/) {
+        $core_read_name = $1;
         $pair_dir = $2;
     }
     elsif (defined($rest) && $rest =~ /^([12]):/) {
@@ -119,12 +115,14 @@ sub new {
     }
     
     
-    my $self = { core_read_name => $read_name,
-                 pair_dir => $pair_dir, # (0, 1, or 2), with 0 = unpaired.
-                 sequence => $seq_line,
-                 quals => $qual_line,
-                 record => $text_lines,
-             };
+    my $self = {
+        full_read_name => $full_read_name,
+        core_read_name => $core_read_name,
+        pair_dir => $pair_dir, # (0, 1, or 2), with 0 = unpaired.
+        sequence => $seq_line,
+        quals => $qual_line,
+        record => $text_lines,
+    };
     
 
     bless ($self, $packagename);
@@ -140,12 +138,16 @@ sub get_core_read_name {
 ####
 sub get_full_read_name {
     my $self = shift;
-    
-    my $read_name = $self->{core_read_name};
-    if ($self->{pair_dir}) {
-        return(join("/", $read_name, $self->{pair_dir}));
-    }
+    return($self->{full_read_name});
 }
+
+####
+sub get_accession {
+    my $self = shift;
+    my $read_name = $self->get_full_read_name();
+    return($read_name);
+}
+
 
 ####
 sub get_sequence {
